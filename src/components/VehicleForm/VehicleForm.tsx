@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import {
   Button,
+  CircularProgress,
   MenuItem,
   Paper,
   Stack,
@@ -15,8 +16,8 @@ import type { Vehicle } from '../../types/vehicle';
 
 interface VehicleFormProps {
   vehicle?: Vehicle;
-  onCreated: (vehicle: CreateVehicle) => void;
-  onUpdated?: (vehicle: CreateVehicle) => void;
+  onCreated: (vehicle: CreateVehicle) => Promise<void>;
+  onUpdated?: (vehicle: CreateVehicle) => Promise<void>;
   onCancel?: () => void;
 }
 
@@ -35,6 +36,8 @@ function VehicleForm({
     VehicleType.SEDAN,
   );
 
+  const [loading, setLoading] = useState(false);
+
   const isEditing = Boolean(vehicle);
 
   useEffect(() => {
@@ -48,10 +51,14 @@ function VehicleForm({
     }
   }, [vehicle]);
 
-  function handleSubmit(
+  async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
+
+    if (loading) {
+      return;
+    }
 
     const data: CreateVehicle = {
       licensePlate,
@@ -62,12 +69,18 @@ function VehicleForm({
       type,
     };
 
-    if (isEditing) {
-      onUpdated?.(data);
-      return;
-    }
+    try {
+      setLoading(true);
 
-    onCreated(data);
+      if (isEditing) {
+        await onUpdated?.(data);
+        return;
+      }
+
+      await onCreated(data);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -88,6 +101,7 @@ function VehicleForm({
             setLicensePlate(event.target.value)
           }
           fullWidth
+          disabled={loading}
         />
 
         <TextField
@@ -97,6 +111,7 @@ function VehicleForm({
             setBrand(event.target.value)
           }
           fullWidth
+          disabled={loading}
         />
 
         <TextField
@@ -106,6 +121,7 @@ function VehicleForm({
             setModel(event.target.value)
           }
           fullWidth
+          disabled={loading}
         />
 
         <TextField
@@ -116,6 +132,7 @@ function VehicleForm({
             setYear(event.target.value)
           }
           fullWidth
+          disabled={loading}
         />
 
         <TextField
@@ -125,6 +142,7 @@ function VehicleForm({
             setColor(event.target.value)
           }
           fullWidth
+          disabled={loading}
         />
 
         <TextField
@@ -135,6 +153,7 @@ function VehicleForm({
             setType(event.target.value as VehicleType)
           }
           fullWidth
+          disabled={loading}
         >
           {Object.values(VehicleType).map((vehicleType) => (
             <MenuItem
@@ -150,8 +169,23 @@ function VehicleForm({
           <Button
             type="submit"
             variant="contained"
+            disabled={loading}
+            startIcon={
+              loading ? (
+                <CircularProgress
+                  size={18}
+                  color="inherit"
+                />
+              ) : undefined
+            }
           >
-            {isEditing ? 'Update vehicle' : 'Create vehicle'}
+            {loading
+              ? isEditing
+                ? 'Updating...'
+                : 'Creating...'
+              : isEditing
+                ? 'Update vehicle'
+                : 'Create vehicle'}
           </Button>
 
           {isEditing && onCancel && (
@@ -159,6 +193,7 @@ function VehicleForm({
               type="button"
               variant="outlined"
               onClick={onCancel}
+              disabled={loading}
             >
               Cancel
             </Button>
