@@ -12,3 +12,17 @@ export async function getVehicles(): Promise<Vehicle[]> {
 
   return response.json();
 }
+
+export async function searchVehicles(
+  search: string,
+): Promise<Vehicle[]> {
+  const response = await fetch(
+    `${API_CONFIG.rest.baseUrl}/vehicles/search?search=${encodeURIComponent(search)}`,
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to search vehicles');
+  }
+
+  return response.json();
+}
