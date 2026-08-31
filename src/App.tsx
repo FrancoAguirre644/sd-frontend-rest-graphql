@@ -2,18 +2,19 @@ import { useEffect, useState } from 'react';
 
 import {
   Alert,
+  Box,
   Button,
   Container,
   Dialog,
-  DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
   FormControl,
   InputLabel,
   MenuItem,
+  Paper,
   Select,
   Snackbar,
+  Stack,
   TextField,
   Typography,
 } from '@mui/material';
@@ -54,6 +55,9 @@ function App() {
 
   const [error, setError] =
     useState<string | null>(null);
+
+  const [formOpen, setFormOpen] =
+    useState(false);
 
   const [notification, setNotification] =
     useState<{
@@ -124,6 +128,8 @@ function App() {
 
       await loadVehicles();
 
+      setFormOpen(false);
+
       showNotification(
         'Vehicle created successfully.',
         'success',
@@ -161,6 +167,8 @@ function App() {
 
       await loadVehicles();
 
+      setFormOpen(false);
+
       showNotification(
         'Vehicle updated successfully.',
         'success',
@@ -173,6 +181,21 @@ function App() {
         'error',
       );
     }
+  }
+
+  function handleCreate() {
+    setEditingVehicle(undefined);
+    setFormOpen(true);
+  }
+
+  function handleEdit(vehicle: Vehicle) {
+    setEditingVehicle(vehicle);
+    setFormOpen(true);
+  }
+
+  function handleCloseForm() {
+    setFormOpen(false);
+    setEditingVehicle(undefined);
   }
 
   function handleDeleteVehicle(
@@ -250,82 +273,139 @@ function App() {
       maxWidth="lg"
       sx={{ mt: 4, mb: 4 }}
     >
-      <Typography
-        variant="h4"
-        gutterBottom
-      >
-        Vehicles
-      </Typography>
+      <Stack spacing={3}>
+        <Box>
+          <Typography
+            variant="h4"
+            fontWeight={600}
+          >
+            Vehicles
+          </Typography>
 
-      <FormControl
-        sx={{ mb: 3, minWidth: 180 }}
-      >
-        <InputLabel id="api-select-label">
-          API
-        </InputLabel>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+          >
+            Manage your vehicle fleet
+          </Typography>
+        </Box>
 
-        <Select
-          labelId="api-select-label"
-          value={apiType}
-          label="API"
+        <Paper
+          variant="outlined"
+          sx={{ p: 2 }}
+        >
+          <Stack
+            direction={{
+              xs: 'column',
+              sm: 'row',
+            }}
+            spacing={2}
+            justifyContent="space-between"
+            alignItems={{
+              xs: 'stretch',
+              sm: 'center',
+            }}
+          >
+            <FormControl
+              sx={{ minWidth: 180 }}
+            >
+              <InputLabel id="api-select-label">
+                API
+              </InputLabel>
+
+              <Select
+                labelId="api-select-label"
+                value={apiType}
+                label="API"
+                onChange={(event) =>
+                  handleApiChange(
+                    event.target.value as ApiType,
+                  )
+                }
+              >
+                <MenuItem value="rest">
+                  REST
+                </MenuItem>
+
+                <MenuItem value="graphql">
+                  GraphQL
+                </MenuItem>
+              </Select>
+            </FormControl>
+
+            <Button
+              variant="contained"
+              onClick={handleCreate}
+            >
+              New vehicle
+            </Button>
+          </Stack>
+        </Paper>
+
+        <TextField
+          label="Search vehicles"
+          variant="outlined"
+          value={search}
           onChange={(event) =>
-            handleApiChange(
-              event.target.value as ApiType,
-            )
+            handleSearch(event.target.value)
           }
-        >
-          <MenuItem value="rest">
-            REST
-          </MenuItem>
-
-          <MenuItem value="graphql">
-            GraphQL
-          </MenuItem>
-        </Select>
-      </FormControl>
-
-      <VehicleForm
-        vehicle={editingVehicle}
-        onCreated={handleCreateVehicle}
-        onUpdated={handleUpdateVehicle}
-        onCancel={() =>
-          setEditingVehicle(undefined)
-        }
-      />
-
-      <TextField
-        label="Search vehicles"
-        variant="outlined"
-        value={search}
-        onChange={(event) =>
-          handleSearch(event.target.value)
-        }
-        fullWidth
-        sx={{ my: 3 }}
-      />
-
-      {loading && (
-        <div>
-          Loading vehicles...
-        </div>
-      )}
-
-      {error && (
-        <Alert
-          severity="error"
-          sx={{ mb: 3 }}
-        >
-          {error}
-        </Alert>
-      )}
-
-      {!loading && !error && (
-        <VehicleTable
-          vehicles={vehicles}
-          onEdit={setEditingVehicle}
-          onDelete={handleDeleteVehicle}
+          fullWidth
         />
-      )}
+
+        {loading && (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              py: 4,
+            }}
+          >
+            <Typography color="text.secondary">
+              Loading vehicles...
+            </Typography>
+          </Box>
+        )}
+
+        {error && (
+          <Alert
+            severity="error"
+          >
+            {error}
+          </Alert>
+        )}
+
+        {!loading && !error && (
+          <VehicleTable
+            vehicles={vehicles}
+            onEdit={handleEdit}
+            onDelete={handleDeleteVehicle}
+          />
+        )}
+      </Stack>
+
+      <Dialog
+        open={formOpen}
+        onClose={handleCloseForm}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>
+          {editingVehicle
+            ? 'Edit vehicle'
+            : 'Create vehicle'}
+        </DialogTitle>
+
+        <DialogContent>
+          <Box sx={{ pt: 1 }}>
+            <VehicleForm
+              vehicle={editingVehicle}
+              onCreated={handleCreateVehicle}
+              onUpdated={handleUpdateVehicle}
+              onCancel={handleCloseForm}
+            />
+          </Box>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={Boolean(deletingVehicle)}
@@ -338,16 +418,21 @@ function App() {
         </DialogTitle>
 
         <DialogContent>
-          <DialogContentText>
+          <Typography>
             Are you sure you want to delete vehicle{' '}
             <strong>
               {deletingVehicle?.licensePlate}
             </strong>
             ?
-          </DialogContentText>
+          </Typography>
         </DialogContent>
 
-        <DialogActions>
+        <Stack
+          direction="row"
+          spacing={2}
+          justifyContent="flex-end"
+          sx={{ p: 2 }}
+        >
           <Button
             onClick={() =>
               setDeletingVehicle(undefined)
@@ -363,7 +448,7 @@ function App() {
           >
             Delete
           </Button>
-        </DialogActions>
+        </Stack>
       </Dialog>
 
       <Snackbar
