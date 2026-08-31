@@ -1,4 +1,7 @@
-import {gql} from '@apollo/client';
+import {
+  gql,
+  type TypedDocumentNode,
+} from '@apollo/client';
 
 import { apolloClient } from './apollo';
 
@@ -25,7 +28,26 @@ interface DeleteVehicleData {
   deleteVehicle: boolean;
 }
 
-const GET_VEHICLES = gql`
+interface SearchVehiclesVariables {
+  search: string;
+}
+
+interface CreateVehicleVariables {
+  input: CreateVehicle;
+}
+
+interface UpdateVehicleVariables {
+  id: number;
+  input: CreateVehicle;
+}
+
+interface DeleteVehicleVariables {
+  id: number;
+}
+
+const GET_VEHICLES: TypedDocumentNode<
+  GetVehiclesData
+> = gql`
   query GetVehicles {
     vehicles {
       id
@@ -40,7 +62,10 @@ const GET_VEHICLES = gql`
   }
 `;
 
-const SEARCH_VEHICLES = gql`
+const SEARCH_VEHICLES: TypedDocumentNode<
+  SearchVehiclesData,
+  SearchVehiclesVariables
+> = gql`
   query SearchVehicles($search: String!) {
     searchVehicles(search: $search) {
       id
@@ -55,7 +80,10 @@ const SEARCH_VEHICLES = gql`
   }
 `;
 
-const CREATE_VEHICLE = gql`
+const CREATE_VEHICLE: TypedDocumentNode<
+  CreateVehicleData,
+  CreateVehicleVariables
+> = gql`
   mutation CreateVehicle(
     $input: CreateVehicleInput!
   ) {
@@ -72,7 +100,10 @@ const CREATE_VEHICLE = gql`
   }
 `;
 
-const UPDATE_VEHICLE = gql`
+const UPDATE_VEHICLE: TypedDocumentNode<
+  UpdateVehicleData,
+  UpdateVehicleVariables
+> = gql`
   mutation UpdateVehicle(
     $id: Int!
     $input: UpdateVehicleInput!
@@ -93,7 +124,10 @@ const UPDATE_VEHICLE = gql`
   }
 `;
 
-const DELETE_VEHICLE = gql`
+const DELETE_VEHICLE: TypedDocumentNode<
+  DeleteVehicleData,
+  DeleteVehicleVariables
+> = gql`
   mutation DeleteVehicle($id: Int!) {
     deleteVehicle(id: $id)
   }
@@ -101,10 +135,16 @@ const DELETE_VEHICLE = gql`
 
 export async function getVehicles(): Promise<Vehicle[]> {
   const { data } =
-    await apolloClient.query<GetVehiclesData>({
+    await apolloClient.query({
       query: GET_VEHICLES,
       fetchPolicy: 'network-only',
     });
+
+  if (!data) {
+    throw new Error(
+      'GraphQL response contains no data.',
+    );
+  }
 
   return data.vehicles;
 }
@@ -113,13 +153,19 @@ export async function searchVehicles(
   search: string,
 ): Promise<Vehicle[]> {
   const { data } =
-    await apolloClient.query<SearchVehiclesData>({
+    await apolloClient.query({
       query: SEARCH_VEHICLES,
       variables: {
         search,
       },
       fetchPolicy: 'network-only',
     });
+
+  if (!data) {
+    throw new Error(
+      'GraphQL response contains no data.',
+    );
+  }
 
   return data.searchVehicles;
 }
@@ -128,7 +174,7 @@ export async function createVehicle(
   vehicle: CreateVehicle,
 ): Promise<Vehicle> {
   const { data } =
-    await apolloClient.mutate<CreateVehicleData>({
+    await apolloClient.mutate({
       mutation: CREATE_VEHICLE,
       variables: {
         input: vehicle,
@@ -137,7 +183,7 @@ export async function createVehicle(
 
   if (!data) {
     throw new Error(
-      'GraphQL response contains no data',
+      'GraphQL response contains no data.',
     );
   }
 
@@ -149,7 +195,7 @@ export async function updateVehicle(
   vehicle: CreateVehicle,
 ): Promise<Vehicle> {
   const { data } =
-    await apolloClient.mutate<UpdateVehicleData>({
+    await apolloClient.mutate({
       mutation: UPDATE_VEHICLE,
       variables: {
         id: Number(id),
@@ -159,7 +205,7 @@ export async function updateVehicle(
 
   if (!data) {
     throw new Error(
-      'GraphQL response contains no data',
+      'GraphQL response contains no data.',
     );
   }
 
@@ -170,7 +216,7 @@ export async function deleteVehicle(
   id: number,
 ): Promise<void> {
   const { data } =
-    await apolloClient.mutate<DeleteVehicleData>({
+    await apolloClient.mutate({
       mutation: DELETE_VEHICLE,
       variables: {
         id: Number(id),
@@ -179,13 +225,13 @@ export async function deleteVehicle(
 
   if (!data) {
     throw new Error(
-      'GraphQL response contains no data',
+      'GraphQL response contains no data.',
     );
   }
 
   if (!data.deleteVehicle) {
     throw new Error(
-      'Vehicle could not be deleted',
+      'No se pudo eliminar el vehículo.',
     );
   }
 }
