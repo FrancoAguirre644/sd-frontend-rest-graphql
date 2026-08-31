@@ -1,16 +1,9 @@
-import { API_CONFIG } from '../../config/api';
+import {gql} from '@apollo/client';
+
+import { apolloClient } from './apollo';
 
 import type { CreateVehicle } from '../../types/create-vehicle';
 import type { Vehicle } from '../../types/vehicle';
-
-interface GraphQLError {
-  message: string;
-}
-
-interface GraphQLResponse<T> {
-  data?: T;
-  errors?: GraphQLError[];
-}
 
 interface GetVehiclesData {
   vehicles: Vehicle[];
@@ -32,7 +25,7 @@ interface DeleteVehicleData {
   deleteVehicle: boolean;
 }
 
-const GET_VEHICLES = `
+const GET_VEHICLES = gql`
   query GetVehicles {
     vehicles {
       id
@@ -47,7 +40,7 @@ const GET_VEHICLES = `
   }
 `;
 
-const SEARCH_VEHICLES = `
+const SEARCH_VEHICLES = gql`
   query SearchVehicles($search: String!) {
     searchVehicles(search: $search) {
       id
@@ -62,8 +55,10 @@ const SEARCH_VEHICLES = `
   }
 `;
 
-const CREATE_VEHICLE = `
-  mutation CreateVehicle($input: CreateVehicleInput!) {
+const CREATE_VEHICLE = gql`
+  mutation CreateVehicle(
+    $input: CreateVehicleInput!
+  ) {
     createVehicle(input: $input) {
       id
       licensePlate
@@ -77,7 +72,7 @@ const CREATE_VEHICLE = `
   }
 `;
 
-const UPDATE_VEHICLE = `
+const UPDATE_VEHICLE = gql`
   mutation UpdateVehicle(
     $id: Int!
     $input: UpdateVehicleInput!
@@ -98,87 +93,18 @@ const UPDATE_VEHICLE = `
   }
 `;
 
-const DELETE_VEHICLE = `
+const DELETE_VEHICLE = gql`
   mutation DeleteVehicle($id: Int!) {
     deleteVehicle(id: $id)
   }
 `;
 
-async function graphqlRequest<T>(
-  query: string,
-  variables?: Record<string, unknown>,
-): Promise<T> {
-  const response = await fetch(
-    API_CONFIG.graphql.baseUrl,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query,
-        variables,
-      }),
-    },
-  );
-
-  const responseText = await response.text();
-
-  if (!response.ok) {
-    console.error('GraphQL HTTP error:', {
-      status: response.status,
-      statusText: response.statusText,
-      url: API_CONFIG.graphql.baseUrl,
-      body: responseText,
-    });
-
-    throw new Error(
-      `GraphQL request failed: ${response.status} ${response.statusText}`,
-    );
-  }
-
-  let result: GraphQLResponse<T>;
-
-  try {
-    result = JSON.parse(responseText);
-  } catch {
-    console.error(
-      'Invalid GraphQL response:',
-      responseText,
-    );
-
-    throw new Error(
-      'GraphQL server returned an invalid response',
-    );
-  }
-
-  if (result.errors?.length) {
-    console.error(
-      'GraphQL errors:',
-      result.errors,
-    );
-
-    throw new Error(
-      result.errors
-        .map((error) => error.message)
-        .join(', '),
-    );
-  }
-
-  if (!result.data) {
-    throw new Error(
-      'GraphQL response contains no data',
-    );
-  }
-
-  return result.data;
-}
-
 export async function getVehicles(): Promise<Vehicle[]> {
-  const data =
-    await graphqlRequest<GetVehiclesData>(
-      GET_VEHICLES,
-    );
+  const { data } =
+    await apolloClient.query<GetVehiclesData>({
+      query: GET_VEHICLES,
+      fetchPolicy: 'network-only',
+    });
 
   return data.vehicles;
 }
@@ -186,13 +112,14 @@ export async function getVehicles(): Promise<Vehicle[]> {
 export async function searchVehicles(
   search: string,
 ): Promise<Vehicle[]> {
-  const data =
-    await graphqlRequest<SearchVehiclesData>(
-      SEARCH_VEHICLES,
-      {
+  const { data } =
+    await apolloClient.query<SearchVehiclesData>({
+      query: SEARCH_VEHICLES,
+      variables: {
         search,
       },
-    );
+      fetchPolicy: 'network-only',
+    });
 
   return data.searchVehicles;
 }
@@ -200,13 +127,19 @@ export async function searchVehicles(
 export async function createVehicle(
   vehicle: CreateVehicle,
 ): Promise<Vehicle> {
-  const data =
-    await graphqlRequest<CreateVehicleData>(
-      CREATE_VEHICLE,
-      {
+  const { data } =
+    await apolloClient.mutate<CreateVehicleData>({
+      mutation: CREATE_VEHICLE,
+      variables: {
         input: vehicle,
       },
+    });
+
+  if (!data) {
+    throw new Error(
+      'GraphQL response contains no data',
     );
+  }
 
   return data.createVehicle;
 }
@@ -215,16 +148,20 @@ export async function updateVehicle(
   id: number,
   vehicle: CreateVehicle,
 ): Promise<Vehicle> {
-  const numericId = Number(id);
-  
-  const data =
-    await graphqlRequest<UpdateVehicleData>(
-      UPDATE_VEHICLE,
-      {
-        id: numericId,
+  const { data } =
+    await apolloClient.mutate<UpdateVehicleData>({
+      mutation: UPDATE_VEHICLE,
+      variables: {
+        id: Number(id),
         input: vehicle,
       },
+    });
+
+  if (!data) {
+    throw new Error(
+      'GraphQL response contains no data',
     );
+  }
 
   return data.updateVehicle;
 }
@@ -232,12 +169,23 @@ export async function updateVehicle(
 export async function deleteVehicle(
   id: number,
 ): Promise<void> {
-  const numericId = Number(id);
+  const { data } =
+    await apolloClient.mutate<DeleteVehicleData>({
+      mutation: DELETE_VEHICLE,
+      variables: {
+        id: Number(id),
+      },
+    });
 
-  await graphqlRequest<DeleteVehicleData>(
-    DELETE_VEHICLE,
-    {
-      id: numericId,
-    },
-  );
+  if (!data) {
+    throw new Error(
+      'GraphQL response contains no data',
+    );
+  }
+
+  if (!data.deleteVehicle) {
+    throw new Error(
+      'Vehicle could not be deleted',
+    );
+  }
 }

@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 
 import {
+  Box,
   Button,
   CircularProgress,
   MenuItem,
-  Paper,
   Stack,
   TextField,
-  Typography,
 } from '@mui/material';
 
 import type { CreateVehicle } from '../../types/create-vehicle';
@@ -48,6 +47,13 @@ function VehicleForm({
       setYear(String(vehicle.year));
       setColor(vehicle.color);
       setType(vehicle.type);
+    } else {
+      setLicensePlate('');
+      setBrand('');
+      setModel('');
+      setYear('');
+      setColor('');
+      setType(VehicleType.SEDAN);
     }
   }, [vehicle]);
 
@@ -84,18 +90,17 @@ function VehicleForm({
   }
 
   return (
-    <Paper sx={{ p: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        {isEditing ? 'Edit vehicle' : 'Create vehicle'}
-      </Typography>
-
+    <Box>
       <Stack
         component="form"
         spacing={2}
         onSubmit={handleSubmit}
+        sx={{
+          p: 3,
+        }}
       >
         <TextField
-          label="License Plate"
+          label="Patente"
           value={licensePlate}
           onChange={(event) =>
             setLicensePlate(event.target.value)
@@ -105,7 +110,7 @@ function VehicleForm({
         />
 
         <TextField
-          label="Brand"
+          label="Marca"
           value={brand}
           onChange={(event) =>
             setBrand(event.target.value)
@@ -115,7 +120,7 @@ function VehicleForm({
         />
 
         <TextField
-          label="Model"
+          label="Modelo"
           value={model}
           onChange={(event) =>
             setModel(event.target.value)
@@ -125,7 +130,7 @@ function VehicleForm({
         />
 
         <TextField
-          label="Year"
+          label="Año"
           type="number"
           value={year}
           onChange={(event) =>
@@ -147,25 +152,44 @@ function VehicleForm({
 
         <TextField
           select
-          label="Type"
+          label="Tipo"
           value={type}
           onChange={(event) =>
-            setType(event.target.value as VehicleType)
+            setType(
+              event.target.value as VehicleType,
+            )
           }
           fullWidth
           disabled={loading}
         >
-          {Object.values(VehicleType).map((vehicleType) => (
-            <MenuItem
-              key={vehicleType}
-              value={vehicleType}
-            >
-              {vehicleType}
-            </MenuItem>
-          ))}
+          {Object.values(VehicleType).map(
+            (vehicleType) => (
+              <MenuItem
+                key={vehicleType}
+                value={vehicleType}
+              >
+                {vehicleType}
+              </MenuItem>
+            ),
+          )}
         </TextField>
 
-        <Stack direction="row" spacing={2}>
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
+            pt: 1,
+          }}
+        >
+          <Button
+            type="button"
+            variant="outlined"
+            onClick={onCancel}
+            disabled={loading}
+          >
+            Cancelar
+          </Button>
+
           <Button
             type="submit"
             variant="contained"
@@ -181,26 +205,15 @@ function VehicleForm({
           >
             {loading
               ? isEditing
-                ? 'Updating...'
-                : 'Creating...'
+                ? 'Actualizando...'
+                : 'Creando...'
               : isEditing
-                ? 'Update vehicle'
-                : 'Create vehicle'}
+                ? 'Actualizar vehículo'
+                : 'Crear vehículo'}
           </Button>
-
-          {isEditing && onCancel && (
-            <Button
-              type="button"
-              variant="outlined"
-              onClick={onCancel}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-          )}
         </Stack>
       </Stack>
-    </Paper>
+    </Box>
   );
 }
 

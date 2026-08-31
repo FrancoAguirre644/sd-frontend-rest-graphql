@@ -19,6 +19,8 @@ import {
   Typography,
 } from '@mui/material';
 
+import AddIcon from '@mui/icons-material/Add';
+
 import {
   getVehicleApi,
   type ApiType,
@@ -85,7 +87,7 @@ function App() {
 
       setVehicles(data);
     } catch {
-      setError('Failed to load vehicles.');
+      setError('No se pudieron cargar los vehículos.');
     } finally {
       setLoading(false);
     }
@@ -110,7 +112,7 @@ function App() {
 
       setVehicles(data);
     } catch {
-      setError('Failed to search vehicles.');
+      setError('No se pudieron buscar los vehículos.');
     } finally {
       setLoading(false);
     }
@@ -131,16 +133,16 @@ function App() {
       setFormOpen(false);
 
       showNotification(
-        'Vehicle created successfully.',
+        'Vehículo creado correctamente.',
         'success',
       );
     } catch (e) {
       console.log(e);
 
-      setError('Failed to create vehicle.');
+      setError('No se pudo crear el vehículo.');
 
       showNotification(
-        'Failed to create vehicle.',
+        'No se pudo crear el vehículo.',
         'error',
       );
     }
@@ -170,14 +172,14 @@ function App() {
       setFormOpen(false);
 
       showNotification(
-        'Vehicle updated successfully.',
+        'Vehículo actualizado correctamente.',
         'success',
       );
     } catch {
-      setError('Failed to update vehicle.');
+      setError('No se pudo actualizar el vehículo.');
 
       showNotification(
-        'Failed to update vehicle.',
+        'No se pudo actualizar el vehículo.',
         'error',
       );
     }
@@ -223,14 +225,14 @@ function App() {
       await loadVehicles();
 
       showNotification(
-        'Vehicle deleted successfully.',
+        'Vehículo eliminado correctamente.',
         'success',
       );
     } catch {
-      setError('Failed to delete vehicle.');
+      setError('No se pudo eliminar el vehículo.');
 
       showNotification(
-        'Failed to delete vehicle.',
+        'No se pudo eliminar el vehículo.',
         'error',
       );
     }
@@ -271,22 +273,17 @@ function App() {
   return (
     <Container
       maxWidth="lg"
-      sx={{ mt: 4, mb: 4 }}
+      sx={{
+        mt: 4,
+        mb: 4,
+      }}
     >
       <Stack spacing={3}>
         <Box>
           <Typography
             variant="h4"
-            fontWeight={600}
           >
-            Vehicles
-          </Typography>
-
-          <Typography
-            variant="body2"
-            color="text.secondary"
-          >
-            Manage your vehicle fleet
+            Gestión de vehículos
           </Typography>
         </Box>
 
@@ -300,14 +297,10 @@ function App() {
               sm: 'row',
             }}
             spacing={2}
-            justifyContent="space-between"
-            alignItems={{
-              xs: 'stretch',
-              sm: 'center',
-            }}
           >
             <FormControl
               sx={{ minWidth: 180 }}
+              size="small"
             >
               <InputLabel id="api-select-label">
                 API
@@ -336,14 +329,16 @@ function App() {
             <Button
               variant="contained"
               onClick={handleCreate}
+              size="small"
+              startIcon={<AddIcon />}
             >
-              New vehicle
+              Nuevo vehículo
             </Button>
           </Stack>
         </Paper>
 
         <TextField
-          label="Search vehicles"
+          label="Buscar vehículos"
           variant="outlined"
           value={search}
           onChange={(event) =>
@@ -361,15 +356,13 @@ function App() {
             }}
           >
             <Typography color="text.secondary">
-              Loading vehicles...
+              Cargando vehículos...
             </Typography>
           </Box>
         )}
 
         {error && (
-          <Alert
-            severity="error"
-          >
+          <Alert severity="error">
             {error}
           </Alert>
         )}
@@ -389,21 +382,30 @@ function App() {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>
+        <DialogTitle
+          sx={{
+            px: 3,
+            py: 2,
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+          }}
+        >
           {editingVehicle
-            ? 'Edit vehicle'
-            : 'Create vehicle'}
+            ? 'Editar vehículo'
+            : 'Nuevo vehículo'}
         </DialogTitle>
 
-        <DialogContent>
-          <Box sx={{ pt: 1 }}>
-            <VehicleForm
-              vehicle={editingVehicle}
-              onCreated={handleCreateVehicle}
-              onUpdated={handleUpdateVehicle}
-              onCancel={handleCloseForm}
-            />
-          </Box>
+        <DialogContent
+          sx={{
+            p: 0,
+          }}
+        >
+          <VehicleForm
+            vehicle={editingVehicle}
+            onCreated={handleCreateVehicle}
+            onUpdated={handleUpdateVehicle}
+            onCancel={handleCloseForm}
+          />
         </DialogContent>
       </Dialog>
 
@@ -414,12 +416,13 @@ function App() {
         }
       >
         <DialogTitle>
-          Delete vehicle
+          Eliminar vehículo
         </DialogTitle>
 
         <DialogContent>
           <Typography>
-            Are you sure you want to delete vehicle{' '}
+            ¿Está seguro de que desea eliminar el
+            vehículo{' '}
             <strong>
               {deletingVehicle?.licensePlate}
             </strong>
@@ -430,7 +433,6 @@ function App() {
         <Stack
           direction="row"
           spacing={2}
-          justifyContent="flex-end"
           sx={{ p: 2 }}
         >
           <Button
@@ -438,7 +440,7 @@ function App() {
               setDeletingVehicle(undefined)
             }
           >
-            Cancel
+            Cancelar
           </Button>
 
           <Button
@@ -446,7 +448,7 @@ function App() {
             color="error"
             variant="contained"
           >
-            Delete
+            Eliminar
           </Button>
         </Stack>
       </Dialog>
@@ -464,7 +466,9 @@ function App() {
           onClose={handleCloseNotification}
           severity={notification.severity}
           variant="filled"
-          sx={{ width: '100%' }}
+          sx={{
+            width: '100%',
+          }}
         >
           {notification.message}
         </Alert>

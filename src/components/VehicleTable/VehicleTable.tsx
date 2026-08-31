@@ -9,6 +9,9 @@ import {
   TableRow,
 } from '@mui/material';
 
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+
 import type { Vehicle } from '../../types/vehicle';
 
 interface VehicleTableProps {
@@ -28,14 +31,14 @@ function VehicleTable({
         <TableHead>
           <TableRow>
             <TableCell>ID</TableCell>
-            <TableCell>License Plate</TableCell>
-            <TableCell>Brand</TableCell>
-            <TableCell>Model</TableCell>
-            <TableCell>Year</TableCell>
+            <TableCell>Patente</TableCell>
+            <TableCell>Marca</TableCell>
+            <TableCell>Modelo</TableCell>
+            <TableCell>Año</TableCell>
             <TableCell>Color</TableCell>
-            <TableCell>Type</TableCell>
-            <TableCell>Active</TableCell>
-            <TableCell>Actions</TableCell>
+            <TableCell>Tipo</TableCell>
+            <TableCell>Activo</TableCell>
+            <TableCell>Acciones</TableCell>
           </TableRow>
         </TableHead>
 
@@ -69,7 +72,7 @@ function VehicleTable({
               </TableCell>
 
               <TableCell>
-                {vehicle.active ? 'Yes' : 'No'}
+                {vehicle.active ? 'Sí' : 'No'}
               </TableCell>
 
               <TableCell>
@@ -77,9 +80,10 @@ function VehicleTable({
                   size="small"
                   variant="outlined"
                   onClick={() => onEdit(vehicle)}
+                  startIcon={<EditIcon />}
                   sx={{ mr: 1 }}
                 >
-                  Edit
+                  Editar
                 </Button>
 
                 <Button
@@ -87,8 +91,9 @@ function VehicleTable({
                   variant="outlined"
                   color="error"
                   onClick={() => onDelete(vehicle)}
+                  startIcon={<DeleteIcon />}
                 >
-                  Delete
+                  Eliminar
                 </Button>
               </TableCell>
             </TableRow>
