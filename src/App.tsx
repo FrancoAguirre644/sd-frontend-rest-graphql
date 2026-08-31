@@ -9,12 +9,15 @@ import {
 } from '@mui/material';
 
 import {
+  createVehicle,
   getVehicles,
   searchVehicles,
 } from './api/rest/vehicle.api';
 
+import VehicleForm from './components/VehicleForm/VehicleForm';
 import VehicleTable from './components/VehicleTable/VehicleTable';
 
+import type { CreateVehicle } from './types/create-vehicle';
 import type { Vehicle } from './types/vehicle';
 
 function App() {
@@ -64,24 +67,42 @@ function App() {
     }
   }
 
+  async function handleCreateVehicle(
+    vehicle: CreateVehicle,
+  ) {
+    try {
+      setError(null);
+
+      await createVehicle(vehicle);
+
+      await loadVehicles();
+    } catch {
+      setError('Failed to create vehicle.');
+    }
+  }
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>
       <Typography variant="h4" gutterBottom>
         Vehicles
       </Typography>
 
+      <VehicleForm
+        onCreated={handleCreateVehicle}
+      />
+
       <TextField
         label="Search vehicles"
         variant="outlined"
         value={search}
-        onChange={(event) => handleSearch(event.target.value)}
+        onChange={(event) =>
+          handleSearch(event.target.value)
+        }
         fullWidth
-        sx={{ mb: 3 }}
+        sx={{ my: 3 }}
       />
 
-      {loading && (
-        <CircularProgress />
-      )}
+      {loading && <CircularProgress />}
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
