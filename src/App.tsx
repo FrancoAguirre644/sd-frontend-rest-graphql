@@ -2,14 +2,21 @@ import { useEffect, useState } from 'react';
 
 import {
   Alert,
+  Button,
   CircularProgress,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   TextField,
   Typography,
 } from '@mui/material';
 
 import {
   createVehicle,
+  deleteVehicle,
   getVehicles,
   searchVehicles,
   updateVehicle,
@@ -25,6 +32,8 @@ function App() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [search, setSearch] = useState('');
   const [editingVehicle, setEditingVehicle] =
+    useState<Vehicle | undefined>();
+  const [deletingVehicle, setDeletingVehicle] =
     useState<Vehicle | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,9 +111,30 @@ function App() {
       setEditingVehicle(undefined);
 
       await loadVehicles();
-    } catch(e) {
-      console.log(e);
+    } catch {
       setError('Failed to update vehicle.');
+    }
+  }
+
+  function handleDeleteVehicle(vehicle: Vehicle) {
+    setDeletingVehicle(vehicle);
+  }
+
+  async function confirmDeleteVehicle() {
+    if (!deletingVehicle) {
+      return;
+    }
+
+    try {
+      setError(null);
+
+      await deleteVehicle(deletingVehicle.id);
+
+      setDeletingVehicle(undefined);
+
+      await loadVehicles();
+    } catch {
+      setError('Failed to delete vehicle.');
     }
   }
 
@@ -132,7 +162,9 @@ function App() {
         sx={{ my: 3 }}
       />
 
-      {loading && <CircularProgress />}
+      {loading && (
+        <CircularProgress />
+      )}
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -144,8 +176,44 @@ function App() {
         <VehicleTable
           vehicles={vehicles}
           onEdit={setEditingVehicle}
+          onDelete={handleDeleteVehicle}
         />
       )}
+
+      <Dialog
+        open={Boolean(deletingVehicle)}
+        onClose={() => setDeletingVehicle(undefined)}
+      >
+        <DialogTitle>
+          Delete vehicle
+        </DialogTitle>
+
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete vehicle{' '}
+            <strong>
+              {deletingVehicle?.licensePlate}
+            </strong>
+            ?
+          </DialogContentText>
+        </DialogContent>
+
+        <DialogActions>
+          <Button
+            onClick={() => setDeletingVehicle(undefined)}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            onClick={confirmDeleteVehicle}
+            color="error"
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }

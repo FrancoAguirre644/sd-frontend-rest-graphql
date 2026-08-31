@@ -70,3 +70,18 @@ export async function updateVehicle(
 
   return response.json();
 }
+
+export async function deleteVehicle(
+  id: number,
+): Promise<void> {
+  const response = await fetch(
+    `${API_CONFIG.rest.baseUrl}/vehicles/${id}`,
+    {
+      method: 'DELETE',
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to delete vehicle');
+  }
+}
