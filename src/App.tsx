@@ -17,11 +17,10 @@ import {
 import {
   createVehicle,
   deleteVehicle,
+  getVehicles,
   searchVehicles,
   updateVehicle,
 } from './api/rest/vehicle.api';
-
-import { getVehicles } from './api/graphql/vehicle.api';
 
 import VehicleForm from './components/VehicleForm/VehicleForm';
 import VehicleTable from './components/VehicleTable/VehicleTable';
