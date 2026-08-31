@@ -1,75 +1,427 @@
-# React + TypeScript + Vite
+# Frontend REST & GraphQL
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend desarrollado con React y TypeScript para consumir y gestionar vehículos mediante dos APIs:
 
-Currently, two official plugins are available:
+* REST API
+* GraphQL API
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+La aplicación permite seleccionar qué API utilizar y realizar las mismas operaciones independientemente de la tecnología utilizada por el backend.
 
-## React Compiler
+## Tecnologías
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+* React
+* TypeScript
+* Vite
+* Material UI
+* Apollo Client
+* GraphQL
+* REST API
+* Fetch API
 
-## Expanding the ESLint configuration
+## Arquitectura
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+El frontend utiliza una arquitectura que abstrae el mecanismo de comunicación con el backend.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```text
+                         ┌──────────────────┐
+                         │      App.tsx     │
+                         └────────┬─────────┘
+                                  │
+                                  ▼
+                       ┌─────────────────────┐
+                       │  getVehicleApi()    │
+                       └──────────┬──────────┘
+                                  │
+                    ┌─────────────┴─────────────┐
+                    │                           │
+                    ▼                           ▼
+             ┌──────────────┐           ┌──────────────┐
+             │  REST API    │           │ GraphQL API  │
+             └──────┬───────┘           └──────┬───────┘
+                    │                          │
+                    ▼                          ▼
+               Fetch API                 Apollo Client
+                                               │
+                                               ▼
+                                      GraphQL HTTP Link
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+De esta manera, `App.tsx` no necesita conocer cómo se realiza cada operación.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Por ejemplo:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
+```ts
+const api = getVehicleApi(apiType);
+
+const vehicles = await api.getVehicles();
+```
+
+La operación puede terminar utilizando REST o GraphQL dependiendo de la selección realizada por el usuario.
+
+---
+
+## Funcionalidades
+
+La aplicación permite:
+
+* Listar vehículos.
+* Buscar vehículos.
+* Crear vehículos.
+* Editar vehículos.
+* Eliminar vehículos.
+* Seleccionar REST o GraphQL como fuente de datos.
+* Mostrar notificaciones de las operaciones realizadas.
+* Mostrar estados de carga y errores.
+* Utilizar un formulario modal para crear y editar vehículos.
+* Visualizar los vehículos mediante una tabla.
+* Utilizar Material UI para la interfaz.
+
+---
+
+## Estructura del proyecto
+
+```text
+src/
+│
+├── api/
+│   │
+│   ├── graphql/
+│   │   ├── apollo.ts
+│   │   └── vehicle.api.ts
+│   │
+│   ├── rest/
+│   │   └── vehicle.api.ts
+│   │
+│   └── vehicle.api.ts
+│
+├── components/
+│   │
+│   ├── VehicleForm/
+│   │   └── VehicleForm.tsx
+│   │
+│   └── VehicleTable/
+│       └── VehicleTable.tsx
+│
+├── config/
+│   └── api.ts
+│
+├── types/
+│   ├── create-vehicle.ts
+│   └── vehicle.ts
+│
+├── App.tsx
+└── main.tsx
+```
+
+---
+
+## Configuración de las APIs
+
+Las URLs de los servicios se encuentran centralizadas en:
+
+```text
+src/config/api.ts
+```
+
+Ejemplo:
+
+```ts
+export const API_CONFIG = {
+  rest: {
+    baseUrl: 'http://localhost:8000/api',
   },
-])
 
+  graphql: {
+    baseUrl: 'http://localhost:8001/graphql',
+  },
+};
+```
+
+Por lo tanto:
+
+### REST
+
+```text
+http://localhost:8000/api
+```
+
+### GraphQL
+
+```text
+http://localhost:8001/graphql
+```
+
+---
+
+## API REST
+
+Las operaciones REST están encapsuladas dentro de:
+
+```text
+src/api/rest/vehicle.api.ts
+```
+
+La implementación utiliza `fetch`.
+
+Ejemplo:
+
+```ts
+export async function getVehicles(): Promise<Vehicle[]> {
+  const response = await fetch(
+    `${API_CONFIG.rest.baseUrl}/vehicles`,
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch vehicles');
+  }
+
+  return response.json();
+}
+```
+
+---
+
+## API GraphQL
+
+Las operaciones GraphQL están encapsuladas dentro de:
+
+```text
+src/api/graphql/vehicle.api.ts
+```
+
+La comunicación se realiza mediante **Apollo Client**.
+
+El cliente se configura en:
+
+```text
+src/api/graphql/apollo.ts
+```
+
+Actualmente utiliza un `HttpLink`:
+
+```ts
+const httpLink = new HttpLink({
+  uri: API_CONFIG.graphql.baseUrl,
+});
+```
+
+y el cliente:
+
+```ts
+export const apolloClient =
+  new ApolloClient({
+    link: httpLink,
+    cache: new InMemoryCache(),
+  });
+```
+
+---
+
+## Apollo Client
+
+Apollo se utiliza exclusivamente como capa de comunicación para GraphQL.
+
+Las operaciones disponibles son:
+
+```text
+getVehicles()
+searchVehicles()
+createVehicle()
+updateVehicle()
+deleteVehicle()
+```
+
+Por ejemplo:
+
+```ts
+const { data } =
+  await apolloClient.query({
+    query: GET_VEHICLES,
+    fetchPolicy: 'network-only',
+  });
+```
+
+Las mutaciones utilizan:
+
+```ts
+apolloClient.mutate(...)
+```
+
+---
+
+## Tipado GraphQL
+
+Los documentos GraphQL están definidos utilizando `TypedDocumentNode`.
+
+Ejemplo:
+
+```ts
+const GET_VEHICLES: TypedDocumentNode<
+  GetVehiclesData
+> = gql`
+  query GetVehicles {
+    vehicles {
+      id
+      licensePlate
+      brand
+      model
+      year
+      color
+      type
+      active
+    }
+  }
+`;
+```
+
+Esto permite que TypeScript infiera correctamente el tipo de respuesta sin tener que especificar manualmente los genéricos en cada llamada a Apollo.
+
+---
+
+## Modelo de vehículo
+
+El frontend utiliza el siguiente modelo:
+
+```ts
+export interface Vehicle {
+  id: number;
+  licensePlate: string;
+  brand: string;
+  model: string;
+  year: number;
+  color: string;
+  type: VehicleType;
+  active: boolean;
+}
+```
+
+Para la creación y actualización se utiliza:
+
+```ts
+export interface CreateVehicle {
+  licensePlate: string;
+  brand: string;
+  model: string;
+  year: number;
+  color: string;
+  type: VehicleType;
+}
+```
+
+---
+
+## Selección de API
+
+La aplicación permite seleccionar desde la interfaz:
+
+```text
+API
+
+┌──────────────┐
+│ REST       ▼ │
+└──────────────┘
+```
+
+o:
+
+```text
+┌──────────────┐
+│ GraphQL    ▼ │
+└──────────────┘
+```
+
+Cuando el usuario cambia la opción, se vuelve a cargar la información utilizando la API seleccionada.
+
+La aplicación utiliza:
+
+```ts
+const api = getVehicleApi(apiType);
+```
+
+Esto permite mantener una interfaz común para ambas implementaciones.
+
+---
+
+## Operaciones
+
+### Listar vehículos
+
+```ts
+api.getVehicles();
+```
+
+### Buscar vehículos
+
+```ts
+api.searchVehicles(search);
+```
+
+### Crear vehículo
+
+```ts
+api.createVehicle(vehicle);
+```
+
+### Actualizar vehículo
+
+```ts
+api.updateVehicle(
+  vehicle.id,
+  vehicle,
+);
+```
+
+### Eliminar vehículo
+
+```ts
+api.deleteVehicle(vehicle.id);
+```
+
+---
+
+## Requisitos
+
+Antes de ejecutar el proyecto es necesario tener instalado:
+
+* Node.js
+* npm
+
+Además, las APIs REST y GraphQL deben estar ejecutándose.
+
+---
+
+## Instalación
+
+Clonar el proyecto:
+
+```bash
+git clone <repository-url>
+```
+
+Ingresar al proyecto:
+
+```bash
+cd sd-frontend-rest-graphql
+```
+
+Instalar dependencias:
+
+```bash
+npm install
+```
+
+---
+
+## Ejecución
+
+Iniciar el servidor de desarrollo:
+
+```bash
+npm run dev
+```
+
+Por defecto, Vite iniciará la aplicación en:
+
+```text
+http://localhost:5173
 ```
