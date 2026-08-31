@@ -1,4 +1,5 @@
 import {
+  Button,
   Paper,
   Table,
   TableBody,
@@ -12,9 +13,13 @@ import type { Vehicle } from '../../types/vehicle';
 
 interface VehicleTableProps {
   vehicles: Vehicle[];
+  onEdit: (vehicle: Vehicle) => void;
 }
 
-function VehicleTable({ vehicles }: VehicleTableProps) {
+function VehicleTable({
+  vehicles,
+  onEdit,
+}: VehicleTableProps) {
   return (
     <TableContainer component={Paper}>
       <Table>
@@ -28,6 +33,7 @@ function VehicleTable({ vehicles }: VehicleTableProps) {
             <TableCell>Color</TableCell>
             <TableCell>Type</TableCell>
             <TableCell>Active</TableCell>
+            <TableCell>Actions</TableCell>
           </TableRow>
         </TableHead>
 
@@ -43,6 +49,15 @@ function VehicleTable({ vehicles }: VehicleTableProps) {
               <TableCell>{vehicle.type}</TableCell>
               <TableCell>
                 {vehicle.active ? 'Yes' : 'No'}
+              </TableCell>
+              <TableCell>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => onEdit(vehicle)}
+                >
+                  Edit
+                </Button>
               </TableCell>
             </TableRow>
           ))}

@@ -12,6 +12,7 @@ import {
   createVehicle,
   getVehicles,
   searchVehicles,
+  updateVehicle,
 } from './api/rest/vehicle.api';
 
 import VehicleForm from './components/VehicleForm/VehicleForm';
@@ -23,6 +24,8 @@ import type { Vehicle } from './types/vehicle';
 function App() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [search, setSearch] = useState('');
+  const [editingVehicle, setEditingVehicle] =
+    useState<Vehicle | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,6 +84,30 @@ function App() {
     }
   }
 
+  async function handleUpdateVehicle(
+    vehicle: CreateVehicle,
+  ) {
+    if (!editingVehicle) {
+      return;
+    }
+
+    try {
+      setError(null);
+
+      await updateVehicle(
+        editingVehicle.id,
+        vehicle,
+      );
+
+      setEditingVehicle(undefined);
+
+      await loadVehicles();
+    } catch(e) {
+      console.log(e);
+      setError('Failed to update vehicle.');
+    }
+  }
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>
       <Typography variant="h4" gutterBottom>
@@ -88,7 +115,10 @@ function App() {
       </Typography>
 
       <VehicleForm
+        vehicle={editingVehicle}
         onCreated={handleCreateVehicle}
+        onUpdated={handleUpdateVehicle}
+        onCancel={() => setEditingVehicle(undefined)}
       />
 
       <TextField
@@ -111,7 +141,10 @@ function App() {
       )}
 
       {!loading && !error && (
-        <VehicleTable vehicles={vehicles} />
+        <VehicleTable
+          vehicles={vehicles}
+          onEdit={setEditingVehicle}
+        />
       )}
     </Container>
   );

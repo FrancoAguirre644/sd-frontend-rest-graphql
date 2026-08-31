@@ -14,7 +14,9 @@ export async function getVehicles(): Promise<Vehicle[]> {
   return response.json();
 }
 
-export async function searchVehicles(search: string): Promise<Vehicle[]> {
+export async function searchVehicles(
+  search: string,
+): Promise<Vehicle[]> {
   const response = await fetch(
     `${API_CONFIG.rest.baseUrl}/vehicles/search?search=${encodeURIComponent(search)}`,
   );
@@ -26,7 +28,9 @@ export async function searchVehicles(search: string): Promise<Vehicle[]> {
   return response.json();
 }
 
-export async function createVehicle(vehicle: CreateVehicle): Promise<Vehicle> {
+export async function createVehicle(
+  vehicle: CreateVehicle,
+): Promise<Vehicle> {
   const response = await fetch(
     `${API_CONFIG.rest.baseUrl}/vehicles`,
     {
@@ -40,6 +44,28 @@ export async function createVehicle(vehicle: CreateVehicle): Promise<Vehicle> {
 
   if (!response.ok) {
     throw new Error('Failed to create vehicle');
+  }
+
+  return response.json();
+}
+
+export async function updateVehicle(
+  id: number,
+  vehicle: CreateVehicle,
+): Promise<Vehicle> {
+  const response = await fetch(
+    `${API_CONFIG.rest.baseUrl}/vehicles/${id}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(vehicle),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to update vehicle');
   }
 
   return response.json();

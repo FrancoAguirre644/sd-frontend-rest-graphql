@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   Button,
@@ -9,27 +9,51 @@ import {
   Typography,
 } from '@mui/material';
 
-import { VehicleType } from '../../types/vehicle';
 import type { CreateVehicle } from '../../types/create-vehicle';
+import { VehicleType } from '../../types/vehicle';
+import type { Vehicle } from '../../types/vehicle';
 
 interface VehicleFormProps {
+  vehicle?: Vehicle;
   onCreated: (vehicle: CreateVehicle) => void;
+  onUpdated?: (vehicle: CreateVehicle) => void;
+  onCancel?: () => void;
 }
 
-function VehicleForm({ onCreated }: VehicleFormProps) {
+function VehicleForm({
+  vehicle,
+  onCreated,
+  onUpdated,
+  onCancel,
+}: VehicleFormProps) {
   const [licensePlate, setLicensePlate] = useState('');
   const [brand, setBrand] = useState('');
   const [model, setModel] = useState('');
   const [year, setYear] = useState('');
   const [color, setColor] = useState('');
-  const [type, setType] = useState<VehicleType>(VehicleType.SEDAN);
+  const [type, setType] = useState<VehicleType>(
+    VehicleType.SEDAN,
+  );
+
+  const isEditing = Boolean(vehicle);
+
+  useEffect(() => {
+    if (vehicle) {
+      setLicensePlate(vehicle.licensePlate);
+      setBrand(vehicle.brand);
+      setModel(vehicle.model);
+      setYear(String(vehicle.year));
+      setColor(vehicle.color);
+      setType(vehicle.type);
+    }
+  }, [vehicle]);
 
   function handleSubmit(
     event: React.FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
 
-    const vehicle: CreateVehicle = {
+    const data: CreateVehicle = {
       licensePlate,
       brand,
       model,
@@ -38,13 +62,18 @@ function VehicleForm({ onCreated }: VehicleFormProps) {
       type,
     };
 
-    onCreated(vehicle);
+    if (isEditing) {
+      onUpdated?.(data);
+      return;
+    }
+
+    onCreated(data);
   }
 
   return (
     <Paper sx={{ p: 3 }}>
       <Typography variant="h6" gutterBottom>
-        Create vehicle
+        {isEditing ? 'Edit vehicle' : 'Create vehicle'}
       </Typography>
 
       <Stack
@@ -117,12 +146,24 @@ function VehicleForm({ onCreated }: VehicleFormProps) {
           ))}
         </TextField>
 
-        <Button
-          type="submit"
-          variant="contained"
-        >
-          Create vehicle
-        </Button>
+        <Stack direction="row" spacing={2}>
+          <Button
+            type="submit"
+            variant="contained"
+          >
+            {isEditing ? 'Update vehicle' : 'Create vehicle'}
+          </Button>
+
+          {isEditing && onCancel && (
+            <Button
+              type="button"
+              variant="outlined"
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+          )}
+        </Stack>
       </Stack>
     </Paper>
   );
