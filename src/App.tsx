@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   Button,
-  CircularProgress,
   Container,
   Dialog,
   DialogActions,
@@ -14,6 +13,7 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  Snackbar,
   TextField,
   Typography,
 } from '@mui/material';
@@ -29,10 +29,16 @@ import VehicleTable from './components/VehicleTable/VehicleTable';
 import type { CreateVehicle } from './types/create-vehicle';
 import type { Vehicle } from './types/vehicle';
 
-function App() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+type NotificationSeverity =
+  | 'success'
+  | 'error';
 
-  const [search, setSearch] = useState('');
+function App() {
+  const [vehicles, setVehicles] =
+    useState<Vehicle[]>([]);
+
+  const [search, setSearch] =
+    useState('');
 
   const [editingVehicle, setEditingVehicle] =
     useState<Vehicle | undefined>();
@@ -43,10 +49,22 @@ function App() {
   const [apiType, setApiType] =
     useState<ApiType>('rest');
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
   const [error, setError] =
     useState<string | null>(null);
+
+  const [notification, setNotification] =
+    useState<{
+      open: boolean;
+      message: string;
+      severity: NotificationSeverity;
+    }>({
+      open: false,
+      message: '',
+      severity: 'success',
+    });
 
   useEffect(() => {
     loadVehicles();
@@ -83,7 +101,8 @@ function App() {
 
       const api = getVehicleApi(apiType);
 
-      const data = await api.searchVehicles(value);
+      const data =
+        await api.searchVehicles(value);
 
       setVehicles(data);
     } catch {
@@ -104,9 +123,20 @@ function App() {
       await api.createVehicle(vehicle);
 
       await loadVehicles();
+
+      showNotification(
+        'Vehicle created successfully.',
+        'success',
+      );
     } catch (e) {
       console.log(e);
+
       setError('Failed to create vehicle.');
+
+      showNotification(
+        'Failed to create vehicle.',
+        'error',
+      );
     }
   }
 
@@ -130,12 +160,24 @@ function App() {
       setEditingVehicle(undefined);
 
       await loadVehicles();
+
+      showNotification(
+        'Vehicle updated successfully.',
+        'success',
+      );
     } catch {
       setError('Failed to update vehicle.');
+
+      showNotification(
+        'Failed to update vehicle.',
+        'error',
+      );
     }
   }
 
-  function handleDeleteVehicle(vehicle: Vehicle) {
+  function handleDeleteVehicle(
+    vehicle: Vehicle,
+  ) {
     setDeletingVehicle(vehicle);
   }
 
@@ -156,18 +198,58 @@ function App() {
       setDeletingVehicle(undefined);
 
       await loadVehicles();
+
+      showNotification(
+        'Vehicle deleted successfully.',
+        'success',
+      );
     } catch {
       setError('Failed to delete vehicle.');
+
+      showNotification(
+        'Failed to delete vehicle.',
+        'error',
+      );
     }
   }
 
-  function handleApiChange(value: ApiType) {
+  function handleApiChange(
+    value: ApiType,
+  ) {
     setApiType(value);
     setSearch('');
   }
 
+  function showNotification(
+    message: string,
+    severity: NotificationSeverity,
+  ) {
+    setNotification({
+      open: true,
+      message,
+      severity,
+    });
+  }
+
+  function handleCloseNotification(
+    _event?: Event | React.SyntheticEvent,
+    reason?: string,
+  ) {
+    if (reason === 'clickaway') {
+      return;
+    }
+
+    setNotification((current) => ({
+      ...current,
+      open: false,
+    }));
+  }
+
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <Container
+      maxWidth="lg"
+      sx={{ mt: 4, mb: 4 }}
+    >
       <Typography
         variant="h4"
         gutterBottom
@@ -223,7 +305,9 @@ function App() {
       />
 
       {loading && (
-        <CircularProgress />
+        <div>
+          Loading vehicles...
+        </div>
       )}
 
       {error && (
@@ -281,6 +365,25 @@ function App() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={4000}
+        onClose={handleCloseNotification}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+      >
+        <Alert
+          onClose={handleCloseNotification}
+          severity={notification.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
