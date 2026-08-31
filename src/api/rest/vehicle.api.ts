@@ -2,202 +2,86 @@ import { API_CONFIG } from '../../config/api';
 import type { CreateVehicle } from '../../types/create-vehicle';
 import type { Vehicle } from '../../types/vehicle';
 
-interface GraphQLError {
-  message: string;
-}
-
-interface GraphQLResponse<T> {
-  data?: T;
-  errors?: GraphQLError[];
-}
-
-interface GetVehiclesData {
-  vehicles: Vehicle[];
-}
-
-interface SearchVehiclesData {
-  searchVehicles: Vehicle[];
-}
-
-interface CreateVehicleData {
-  createVehicle: Vehicle;
-}
-
-interface UpdateVehicleData {
-  updateVehicle: Vehicle;
-}
-
-interface DeleteVehicleData {
-  deleteVehicle: boolean;
-}
-
-const GET_VEHICLES = `
-  query GetVehicles {
-    vehicles {
-      id
-      licensePlate
-      brand
-      model
-      year
-      color
-      type
-      active
-    }
-  }
-`;
-
-const SEARCH_VEHICLES = `
-  query SearchVehicles($search: String!) {
-    searchVehicles(search: $search) {
-      id
-      licensePlate
-      brand
-      model
-      year
-      color
-      type
-      active
-    }
-  }
-`;
-
-const CREATE_VEHICLE = `
-  mutation CreateVehicle($vehicle: CreateVehicleInput!) {
-    createVehicle(vehicle: $vehicle) {
-      id
-      licensePlate
-      brand
-      model
-      year
-      color
-      type
-      active
-    }
-  }
-`;
-
-const UPDATE_VEHICLE = `
-  mutation UpdateVehicle(
-    $id: ID!
-    $vehicle: UpdateVehicleInput!
-  ) {
-    updateVehicle(
-      id: $id
-      vehicle: $vehicle
-    ) {
-      id
-      licensePlate
-      brand
-      model
-      year
-      color
-      type
-      active
-    }
-  }
-`;
-
-const DELETE_VEHICLE = `
-  mutation DeleteVehicle($id: ID!) {
-    deleteVehicle(id: $id)
-  }
-`;
-
-async function graphqlRequest<T>(
-  query: string,
-  variables?: Record<string, unknown>,
-): Promise<T> {
+export async function getVehicles(): Promise<Vehicle[]> {
   const response = await fetch(
-    API_CONFIG.graphql.url,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query,
-        variables,
-      }),
-    },
+    `${API_CONFIG.rest.baseUrl}/vehicles`,
   );
 
   if (!response.ok) {
-    throw new Error('GraphQL request failed');
+    throw new Error('Failed to fetch vehicles');
   }
 
-  const result: GraphQLResponse<T> =
-    await response.json();
-
-  if (result.errors?.length) {
-    throw new Error(result.errors[0].message);
-  }
-
-  if (!result.data) {
-    throw new Error('GraphQL response contains no data');
-  }
-
-  return result.data;
-}
-
-export async function getVehicles(): Promise<Vehicle[]> {
-  const data = await graphqlRequest<GetVehiclesData>(
-    GET_VEHICLES,
-  );
-
-  return data.vehicles;
+  return response.json();
 }
 
 export async function searchVehicles(
   search: string,
 ): Promise<Vehicle[]> {
-  const data =
-    await graphqlRequest<SearchVehiclesData>(
-      SEARCH_VEHICLES,
-      {
-        search,
-      },
-    );
+  const response = await fetch(
+    `${API_CONFIG.rest.baseUrl}/vehicles/search?search=${encodeURIComponent(search)}`,
+  );
 
-  return data.searchVehicles;
+  if (!response.ok) {
+    throw new Error('Failed to search vehicles');
+  }
+
+  return response.json();
 }
 
 export async function createVehicle(
   vehicle: CreateVehicle,
 ): Promise<Vehicle> {
-  const data =
-    await graphqlRequest<CreateVehicleData>(
-      CREATE_VEHICLE,
-      {
-        vehicle,
+  const response = await fetch(
+    `${API_CONFIG.rest.baseUrl}/vehicles`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    );
+      body: JSON.stringify(vehicle),
+    },
+  );
 
-  return data.createVehicle;
+  if (!response.ok) {
+    throw new Error('Failed to create vehicle');
+  }
+
+  return response.json();
 }
 
 export async function updateVehicle(
   id: number,
   vehicle: CreateVehicle,
 ): Promise<Vehicle> {
-  const data =
-    await graphqlRequest<UpdateVehicleData>(
-      UPDATE_VEHICLE,
-      {
-        id: String(id),
-        vehicle,
+  const response = await fetch(
+    `${API_CONFIG.rest.baseUrl}/vehicles/${id}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    );
+      body: JSON.stringify(vehicle),
+    },
+  );
 
-  return data.updateVehicle;
+  if (!response.ok) {
+    throw new Error('Failed to update vehicle');
+  }
+
+  return response.json();
 }
 
 export async function deleteVehicle(
   id: number,
 ): Promise<void> {
-  await graphqlRequest<DeleteVehicleData>(
-    DELETE_VEHICLE,
+  const response = await fetch(
+    `${API_CONFIG.rest.baseUrl}/vehicles/${id}`,
     {
-      id: String(id),
+      method: 'DELETE',
     },
   );
+
+  if (!response.ok) {
+    throw new Error('Failed to delete vehicle');
+  }
 }

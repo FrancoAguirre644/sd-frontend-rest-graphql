@@ -13,6 +13,6 @@ export interface Vehicle {
   model: string;
   year: number;
   color: string;
-  type: VehicleType;
+  type: string;
   active: boolean;
 }

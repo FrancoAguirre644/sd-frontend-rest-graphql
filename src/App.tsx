@@ -10,17 +10,18 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
   TextField,
   Typography,
 } from '@mui/material';
 
 import {
-  createVehicle,
-  deleteVehicle,
-  getVehicles,
-  searchVehicles,
-  updateVehicle,
-} from './api/rest/vehicle.api';
+  getVehicleApi,
+  type ApiType,
+} from './api/vehicle.api';
 
 import VehicleForm from './components/VehicleForm/VehicleForm';
 import VehicleTable from './components/VehicleTable/VehicleTable';
@@ -30,24 +31,35 @@ import type { Vehicle } from './types/vehicle';
 
 function App() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+
   const [search, setSearch] = useState('');
+
   const [editingVehicle, setEditingVehicle] =
     useState<Vehicle | undefined>();
+
   const [deletingVehicle, setDeletingVehicle] =
     useState<Vehicle | undefined>();
+
+  const [apiType, setApiType] =
+    useState<ApiType>('rest');
+
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const [error, setError] =
+    useState<string | null>(null);
 
   useEffect(() => {
     loadVehicles();
-  }, []);
+  }, [apiType]);
 
   async function loadVehicles() {
     try {
       setLoading(true);
       setError(null);
 
-      const data = await getVehicles();
+      const api = getVehicleApi(apiType);
+
+      const data = await api.getVehicles();
 
       setVehicles(data);
     } catch {
@@ -61,7 +73,7 @@ function App() {
     setSearch(value);
 
     if (!value.trim()) {
-      loadVehicles();
+      await loadVehicles();
       return;
     }
 
@@ -69,7 +81,9 @@ function App() {
       setLoading(true);
       setError(null);
 
-      const data = await searchVehicles(value);
+      const api = getVehicleApi(apiType);
+
+      const data = await api.searchVehicles(value);
 
       setVehicles(data);
     } catch {
@@ -85,10 +99,13 @@ function App() {
     try {
       setError(null);
 
-      await createVehicle(vehicle);
+      const api = getVehicleApi(apiType);
+
+      await api.createVehicle(vehicle);
 
       await loadVehicles();
-    } catch {
+    } catch (e) {
+      console.log(e);
       setError('Failed to create vehicle.');
     }
   }
@@ -103,7 +120,9 @@ function App() {
     try {
       setError(null);
 
-      await updateVehicle(
+      const api = getVehicleApi(apiType);
+
+      await api.updateVehicle(
         editingVehicle.id,
         vehicle,
       );
@@ -128,7 +147,11 @@ function App() {
     try {
       setError(null);
 
-      await deleteVehicle(deletingVehicle.id);
+      const api = getVehicleApi(apiType);
+
+      await api.deleteVehicle(
+        deletingVehicle.id,
+      );
 
       setDeletingVehicle(undefined);
 
@@ -138,17 +161,54 @@ function App() {
     }
   }
 
+  function handleApiChange(value: ApiType) {
+    setApiType(value);
+    setSearch('');
+  }
+
   return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Typography
+        variant="h4"
+        gutterBottom
+      >
         Vehicles
       </Typography>
+
+      <FormControl
+        sx={{ mb: 3, minWidth: 180 }}
+      >
+        <InputLabel id="api-select-label">
+          API
+        </InputLabel>
+
+        <Select
+          labelId="api-select-label"
+          value={apiType}
+          label="API"
+          onChange={(event) =>
+            handleApiChange(
+              event.target.value as ApiType,
+            )
+          }
+        >
+          <MenuItem value="rest">
+            REST
+          </MenuItem>
+
+          <MenuItem value="graphql">
+            GraphQL
+          </MenuItem>
+        </Select>
+      </FormControl>
 
       <VehicleForm
         vehicle={editingVehicle}
         onCreated={handleCreateVehicle}
         onUpdated={handleUpdateVehicle}
-        onCancel={() => setEditingVehicle(undefined)}
+        onCancel={() =>
+          setEditingVehicle(undefined)
+        }
       />
 
       <TextField
@@ -167,7 +227,10 @@ function App() {
       )}
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert
+          severity="error"
+          sx={{ mb: 3 }}
+        >
           {error}
         </Alert>
       )}
@@ -182,7 +245,9 @@ function App() {
 
       <Dialog
         open={Boolean(deletingVehicle)}
-        onClose={() => setDeletingVehicle(undefined)}
+        onClose={() =>
+          setDeletingVehicle(undefined)
+        }
       >
         <DialogTitle>
           Delete vehicle
@@ -200,7 +265,9 @@ function App() {
 
         <DialogActions>
           <Button
-            onClick={() => setDeletingVehicle(undefined)}
+            onClick={() =>
+              setDeletingVehicle(undefined)
+            }
           >
             Cancel
           </Button>

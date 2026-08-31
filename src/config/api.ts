@@ -14,6 +14,6 @@ export const API_CONFIG = {
     baseUrl: restApiUrl,
   },
   graphql: {
-    url: graphqlApiUrl,
+    baseUrl: graphqlApiUrl,
   },
 };
